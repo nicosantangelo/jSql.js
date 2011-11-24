@@ -1,13 +1,18 @@
-//http://jsbin.com/emajaj/3/edit
+//Created by Nicolás Santángelo
+//Free to use, I gladly appreciate any help with bugs, functionality or anything related.
+
 //TODO:
-//      arreglar merge para singleObj
-//      ¿Agregar remove y update?
-//      Robar métodos de aca http://msdn.microsoft.com/en-us/library/bb738550.aspx
+//      fix merge with singleObj
+//      add remove and update?
+//      refactor inner methods
+//      refactor where method
+//      Cross browser support (IE, namely getElementsByClassName )
+
 (function(window, undefined) {
-    //Metodos usados dentro de jSql, pero no expuestos
+    //Methods used inside jSql but not exposed
 	
     //
-    //Une las propiedades del obj2 en obj y lo retorna
+    //Merges the properties of obj2 in obj and returns it
     var mergeProperties =  function(obj, obj2) {
         var name;
         if (obj !== undefined && obj !== null) {
@@ -33,7 +38,7 @@
         return obj;
     },
     //
-    //Une cualquier cantidad de arrays pasados por parámetro
+    //Merges any amount of arrays
     mergeArrays = function() {
         var argumentArray = Array.prototype.slice.call(arguments),
             returnArray = [], totalLen = argumentArray.length, i = 0;
@@ -51,7 +56,7 @@
         return returnArray;
     },
     //
-    //Retorna el maximo o minimo de una coleccion (usa forEach)
+    //Returns the maximun or minimun of a collection (uses forEach)
     minOrMax = function(objToSearch, selector, isMax) {
         var aux, auxFunc;
         if(objToSearch) {
@@ -75,25 +80,25 @@
         return aux;
     },
     
-    //Objeto Global
+    //Global Object 
     jSql = (function() {
         //
-        //Retorna una nueva instancia de jSql
+        //
         var jSql = function(element) {
             return new jSql.prototype.Instance(element);
         },
         //
-        //Ejetuca un metodo pasado por parametro usando obj como this
+        //Executes a method with obj as context, with any amount of parameters (helper)
 		executeMethod = function(meth, obj) {
 		    var args = Array.prototype.slice.call(arguments);
 			return jSql.prototype[meth].apply(obj, args);
 		};
 
-        //Metodos de una instancia
+        //Instance methods
         jSql.prototype = {
             constructor: jSql,
             //
-            //Asigna y retorna una instancia de jSql
+            //Asign and fill an instance
             Instance: function(el, type) {
                 this.element = el;
                 this.type = (!type) ? jSql.detectType(el) : type;
@@ -107,8 +112,8 @@
                 return jSql.forEach(this, method, true);
             },
             //
-            //Aplica una funcion al elemento, si es una colección, a cada elemento de la misma.
-            //Al método se le pasa como argumento el valor del elemento y el índice si es array o la propiedad y índice si es obj
+            //Applies a function to the element, if it is a collection, to every element of it.
+            //The method recives the value of the element and the index if it is an array, otherwise the property and index.
             map: function(method) {
                 var temporalResult, returnObj = jSql( this.isArray() ? [] : {});
                
@@ -122,8 +127,8 @@
                 return jSql(returnObj.element);
             },
             //
-            //Aplica una funcion a cada elemento de la coleccion. 
-            //Si el retorno de la funcion es verdadero, se agrega a la colección que se devuelve
+            //Applies a function to the element, if it is a collection, to every element of it.
+            //If the return of the function is true, it is added to the returned collection.
 			filter: function(method, obj) { 
 				var temporalResult, self = this, returnObj = jSql( this.isArray() ? [] : {});
 				
@@ -137,15 +142,15 @@
 				return jSql(returnObj.element);
 			},
 			//
-			//Agrega un objeto a otro, si se pasa prop, agrega la propiedad, si es array, intenta usar push.
+			//Add an object to other, if prop exists, adds the property, if it is an array, uses push.
 			add: function(value, prop) {
                 this.element = jSql.add(this.element, value, prop);
                 this.length++;
                 return this;
 			},
             //
-			//Selecciona los valores pasados en Selector (separados por espacios)
-			//Ordered indica si es verdadero la coleccion devuelta debe estar en el orden original o sino en el pasado.
+            //Selects the values passed in the selector string (split by space)
+            //If ordered is truthy the collection is returned sorted.
             select: function(selector, ordered) {
                 var splittedSelector, returnObj = jSql(), len = 0, i = 0, tmpObj;
 				
@@ -193,10 +198,10 @@
 				return returnObj;
             },
             //
-            //Abreviacion para realizar filters
-            //Soporta la sintaxis where(Propiedad[<,>,=]Valor), y pueden utilizarse && o || (son excluyentes)
-            //Si se cumple la condicion retorna todo el elemento, sino, vacio.
-            //Como Propiedad puede pasarse * que significa que todo elemento debe pasar la condicion
+            //Shortcut to filter data
+            //Supports the sintax where(Property[<,>,=]Value), and && o || can be used (are exclusives)
+            //If the condition is matched, that object is returned.
+            //* can be passed as Propery, witch means that every element must pass the condition
             where: function(selector, all) { 
                 var splitAnd, splitOr, splitTotal, splitValueOp,
                     firstOp, secondOp, op, condition, 
@@ -310,14 +315,14 @@
                 
             },
             //
-            //Retorna todo si se cumple la condicion del where, sino nada.
+            //Returns everything if there's a match, otherwise nothing.
             whereAll: function (selector) {
                 return this.where(selector, true);
             },
             //
-            //Ordena la coleccion, está orientado a usarse con arrays, u objetos que posean un método sort()
-            //Puede pasarse [asc,desc] como primer parámetro, una funcion para ordenar o, si es un array de obj, el nombre de la propiedad.
-            //por la cual ordenar y luego [asc,desc].
+            //Orders the collection, uses native sort()
+            //asc or desc can be passed as a first argument, a function to sort, or 
+            //if is it an object array, the name of the property to order by, and then asc or desc
             orderBy: function(data, direction) { 
                var sorter = function(a, b) {
                      if (a < b) {
@@ -351,7 +356,7 @@
                 return this;
             },
             //
-            //Retorna true si todo elemento de la coleccion pasa el método
+            //true if every element passes condition of the method
             all: function(method) {
                 if(method) {
                     return this.length === this.filter(method).length;
@@ -359,7 +364,7 @@
                 return false;
             },
             //
-            //Retorna true si algún elemento de la coleccion pasa el método
+            //true if at least one element passes condition of the method
             any: function(method) {
                 if(method) {
                     return this.filter(method).length > 0;
@@ -367,34 +372,34 @@
                 return false;
             },
             //
-            //
+            //Returns an instance of jSql with the first element of a collection or object (arbitrary in this last one)
             first: function() {
                 var elem = this.element;
                 if(elem) {
                     if(elem.length) {
-                        return elem[0];
+                        return jSql(elem[0]);
                     } else {
-                        return jSql.objToArray(elem)[0];
+                        return jSql(jSql.objToArray(elem)[0]);
                     }
                 }
                 return;
             },
             //
-            //
+            //Returns an instance of jSql with the last element of a collection or object (arbitrary in this last one)
             last: function() {
                 var len, elem = this.element;
                 if(elem) {
                     if(elem.length) {
-                        return elem[elem.length-1];
+                        return jSql(elem[elem.length-1]);
                     } else {
                         elem = jSql.objToArray(elem);
-                        return elem[elem.length -1];
+                        return jSql(elem[elem.length -1]);
                     }
                 }
                 return;
             },
             //
-            //Toma los "amount" primeros elementos de la coleccion
+            //Takes the first "amount" elements of a collection
             take: function(amount) {
                 var returnObj, i, len = this.element.length;
                 if( amount && len) {
@@ -408,7 +413,7 @@
                 return this;
             },
             //
-            //Saltea los "amount" primeros elementos de la coleccion
+            //Skips the first "amount" elements of a collection
             skip: function(amount) { 
                 var returnObj, i, len = this.element.length;
                 if( amount && len) {
@@ -425,7 +430,7 @@
                 return this;
             },
             //
-            //
+            //Filter the duplicated values
             distinct: function(selector) {
                 var distinctObj = this, value,
                 returnObj = (distinctObj.type === "array") ? jSql([]) : jSql({}),
@@ -442,7 +447,7 @@
                 return returnObj;
             },
             //
-            //
+            //Descriptive methods
             contains: function(value) {
                 return jSql.contains(this.element, value);
             },
@@ -462,10 +467,10 @@
                 return minOrMax(this, selector, true);
             },
             //
-            //Une dos objetos, loc es para uso interno
-            //Siempre mantiene el tipo del primer objeto. Si no se pasa obj2, asume que quiere utilizarse this.element
+            //Merges any two objects, loc is internal
+            //Always mantains the type of the first parameter. if obj2 is undefined, uses this.element
             merge: function(obj, obj2, loc) { 
-                var objType1 = jSql.detectType(obj), objType2 = (obj2) ? jSql.detectType(obj2) : jSql.detectType(this.element), 
+                var objType1 = jSql.detectType(obj), objType2 = (obj2 !== undefined) ? jSql.detectType(obj2) : jSql.detectType(this.element), 
                     returnObj;
 				if(!obj2) {
 					obj2 = obj;
@@ -489,9 +494,9 @@
 				return returnObj;
             },
             //
-            //Encuentra y devuelve el valor de la propiedad "prop", si no existe, retorna el elemento
-            //Si el elemento es un documento, soporta la sintaxis # para ids y . para clases (sino busca tags)
-            //Retorna un array con todos los tags que macheen (y un array con un elemento en caso de Id)
+            //Finds and returns the value of the "prop" property, if it doesn't exists, returns the object
+            //If the element is an object, supports css like sintax for ids, classes and tags,
+            //and returns an array with every match.
             getElement: function(prop, dontGetIt) {
                 var result, selector;
                 if(prop !== undefined) {
@@ -516,8 +521,8 @@
                 return (dontGetIt) ? undefined : this.element;
             },
             //
-            //Métodos que devuelven el tipo del obj
-            //El tipo puede ser, array, funcion, document, multiObj (objeto con propiedades), singleObj (Number o String)
+            //Detect method type
+            //Can be array, funcion, document, multiObj (objeto with properties), singleObj (Number o String)
             isArray: function() {
                 return (Object.prototype.toString.call(this.element) === "[object Array]") ? "array" : "";
             },
@@ -536,7 +541,7 @@
                 return (this.element && this.element.nodeType) ? "document": "";
             },
             //
-            //
+            //Cross browser text content
             getTextContent: function(prop) {
                 var el = ( this.getElement ) ? this.getElement(prop) : this.element;
                 if(el) {
@@ -545,18 +550,18 @@
                 return;
             }
         };
-        //Asignamos el prototipo para poderlo usar en las instancias
+        //Asign prototype to use it in the instances
         jSql.prototype.Instance.prototype = jSql.prototype;
 
-        //Métodos del objeto jSql
+        //Object Methods
         mergeProperties(jSql, {
             //
-            //Retorna una instancia de jSql, permite la sintaxis jSql.from(el).select(...) === jSql(el).select(...)
+            //Returns an instance of jSql, allows the sintax: jSql.from(el).select(...) === jSql(el).select(...)
             from: function(element) {
                 return (element.constructor !== jSql) ? jSql(element) : element;
             },
             //
-            //Métodos que devuelven el tipo del obj
+            //Type methods
             isArray: function(obj) {
                 return executeMethod("isArray", { element: obj});
             },
@@ -569,7 +574,7 @@
             isDocument: function(obj) {
                 return executeMethod("isDocument", { element: obj });
             },
-            //Detecta y retorna el tipo del obj pasado por parametro
+            //Detects and returns the type
 			detectType: function(obj) {
 				var result = this.isArray(obj);
 				return result ? result : 
@@ -579,18 +584,17 @@
                                 "multiObj";
 			},
 			//
-			//Une dos objetos y los retorna 
-			//Si sql existe, devuelve una instancia de jSql, sino solo el elemento
+			//Merges, if sql exists, returns an instance of jSql
             merge: function(obj1, obj2, sql) {
                 var js = jSql.prototype.merge(obj1, obj2);
-                return (sql) ? jSql(js) : js;
+                return (sql !== undefined) ? jSql(js) : js;
             },
             //
             //
             forEach: function(object, method, isInternal) {
                 var i, len, prop, obj;
                 obj = (isInternal) ? object.element : object;
-                if(obj && obj.length) {
+                if(obj.length && !jSql.isFunction(obj)) {
                     for ( i = 0, len = obj.length ; i < len ; i++) {
                         if( method.call(obj, i) === false ) {
                             break;
@@ -605,6 +609,8 @@
                 }
                 return object;
             },
+            //
+            //
             add: function(destination, value, prop) {
                 if(destination) {
                     if( destination.push ) {
@@ -638,6 +644,8 @@
                 }
                 return has;
             },
+            //
+            //
             equals: function(a, b) {
                 var equals = true;
                 jSql.forEach(a, function(prop) {
@@ -673,14 +681,14 @@
                 return minOrMax(obj, selector, true);
             },
             //
-            //Convierte un array en un objeto, con propiedades enumeradas
+            //Transforms an array in a object, with enumerated properties
 			arrayToObj: function(array) {
 			    if(!array.length) array = [array];
                 for(var obj = {}, len = array.length, i = 0; i < len ; obj[i.toString()] = array[i++]){ }
                 return obj;
             },
             //
-            //Convierte un objeto (o cualquier cosa con propiedades) en un array.
+            //Transforms an object (or anything with properties) in an array
             objToArray: function(obj) {
                 var prop, arr = [];
                 for(prop in obj) {
@@ -694,7 +702,7 @@
                 return arr;
             },
             //
-            //Obtiene el tamaño de un objeto, contando las propiedades que le pertenecen
+            //
             count: function(obj) {
                 var len = 0, prop;
                 if(obj) {
